@@ -347,7 +347,8 @@ workflow_agent = AgentWorkflow(
 # Runner
 # ------------------------------------------------------------
 async def main():
-    # query = input("> ").strip() # CI test change
+    # CI test change
+    # query = input("> ").strip()
     query = "Write a review for PR: " + pr_number
     prompt = RichPromptTemplate(query)
 
