@@ -1,28 +1,3 @@
-"""
-PR Review Agent – Main Script
-=============================
-
-This module defines the main entry point for the Pull Request Review workflow.
-It initializes and executes a coordinated multi‑agent system designed to
-analyze a GitHub pull request, generate a high‑quality review, and post the
-final result back to GitHub.
-
-The workflow consists of three specialized agents:
-
-- ContextAgent: retrieves PR metadata, commit details, diffs, and any additional
-  repository context required for analysis.
-- CommentorAgent: consumes the gathered context and produces a structured,
-  human‑like draft review comment based on contribution rules and code changes.
-- ReviewAndPostingAgent: evaluates the draft review, requests rewrites when
-  necessary, finalizes the review, updates shared state, and posts the approved
-  comment to GitHub.
-
-This script uses LlamaIndex’s AgentWorkflow to manage agent transitions,
-tool execution, and shared state. As the workflow runs, detailed events are
-streamed to the console, including active agent changes, tool selections,
-tool outputs, and the final posted review.
-"""
-
 from github import Auth, Github
 from llama_index.core.workflow import Context
 # In LlamaIndex, we can use classes like FunctionAgent or ReActAgent or CodeAgent to create various types of agents
@@ -43,7 +18,7 @@ dotenv.load_dotenv()
 # -----------------------------
 
 llm = OpenAI(
-    model=os.getenv("OPENAI_MODEL"),
+    model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),
     api_base=os.getenv("OPENAI_BASE_URL"),
 )
@@ -51,13 +26,18 @@ llm = OpenAI(
 # -----------------------------
 # Setup GitHub client
 # -----------------------------
-GITHUB_REPO_OWNER = os.getenv("GITHUB_REPO_OWNER")
-GITHUB_REPO_NAME = os.getenv("GITHUB_REPO_NAME")
-github = Github(auth=Auth.Token(os.getenv("GITHUB_TOKEN")))
-repo = github.get_repo(f"{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}")
+#Locally → uses your PAT, CI → uses GitHub’s auto token, If nothing is set → falls back to anonymous
+github_client = Github(os.getenv("GITHUB_TOKEN")) if os.getenv("GITHUB_TOKEN") else Github()
 
-# Define the repository URL that agents will use
-repo_url = f"https://github.com/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}"
+# REPOSITORY and PR number provided by env (local or CI)
+repository = os.getenv("REPOSITORY")
+pr_number = os.getenv("PR_NUMBER")
+
+# Load the repo object
+repo = github_client.get_repo(repository)
+
+# Construct repo URL for test
+repo_url = f"https://github.com/{repository}"
 
 # ------------------------------------------------------------
 # Tools
@@ -367,7 +347,8 @@ workflow_agent = AgentWorkflow(
 # Runner
 # ------------------------------------------------------------
 async def main():
-    query = input("> ").strip()
+    # query = input("> ").strip()
+    query = "Write a review for PR: " + pr_number
     prompt = RichPromptTemplate(query)
 
     handler = workflow_agent.run(prompt.format())
@@ -389,4 +370,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    github.close()
+    github_client.close()
