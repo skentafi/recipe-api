@@ -2,6 +2,7 @@ from django.db import models
 
 
 class Recipe(models.Model):
+    # This model stores basic recipe information
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     time_minutes = models.IntegerField()
