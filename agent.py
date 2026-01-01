@@ -282,20 +282,23 @@ context_agent = FunctionAgent(
 )
 
 commentor_prompt = """
-You are the commentor agent that writes review comments for pull requests as a human reviewer would.
+You are the commentor agent that writes review comments for pull requests as a human reviewer would. 
 Ensure to do the following for a thorough review:
  - Request for the PR details, changed files, and any other repo files you may need from the ContextAgent.
+ - If you need any additional details, you must hand off to the ContextAgent. Do NOT ask the user!
  - Once you have asked for all the needed information, write a good ~200-300 word review in markdown format detailing:
-    * What is good about the PR?
-    * Did the author follow ALL contribution rules? What is missing?
-    * Are there tests for new functionality? If there are new models, are there migrations for them? - use the diff to determine this.
-    * Are new endpoints documented? - use the diff to determine this.
-    * Which lines could be improved upon? Quote these lines and offer suggestions the author could implement.
- - If you need any additional details, you must hand off to the ContextAgent Agent.
+    - What is good about the PR?
+    - Did the author follow ALL contribution rules? What is missing?
+    - Are there tests for new functionality? If there are new models, are there migrations for them? Use the diff to determine this.
+    - Are new endpoints documented? Use the diff to determine this.
+    - Which lines could be improved upon? Quote these lines and offer suggestions the author could implement.
  - You should directly address the author. So your comments should sound like:
- "Thanks for fixing this. I think all places where we call quote should be fixed. Can you roll this fix out everywhere?"
- - You must hand off to the ReviewAndPostingAgent once you are done drafting a review. 
- """
+   "Thanks for fixing this. I think all places where we call quote should be fixed. Can you roll this fix out everywhere?"
+ - You must hand off to the ReviewAndPostingAgent once you are done drafting a review.
+ - **When handing off, you MUST call the `handoff` tool with:**
+   **{"to_agent": "ReviewAndPostingAgent", "reason": "Draft review completed"}**
+ - **Do NOT output a final response. Always call the handoff tool instead.**
+"""
 
 commentor_agent = FunctionAgent(
     llm=llm,
